@@ -88,20 +88,20 @@
     <!-- タブ1: 分析ビュー -->
     <div id="viewAnalytics" class="space-y-5">
       
-      <!-- 1. 習慣別内訳グラフ（内訳ボタン付き） -->
+      <!-- 1. 習慣別内訳グラフ -->
       <div class="glass-card p-4 rounded-2xl">
-        <div class="flex justify-between items-start mb-2">
+        <div class="flex justify-between items-center mb-2">
           <div>
             <h2 class="text-sm font-bold text-white">食費・日常習慣のリアル内訳</h2>
             <p class="text-[11px] text-slate-400">「食費」に隠れた居酒屋・コンビニ・自販機を分離</p>
           </div>
-          <!-- 右上の内訳ボタン -->
-          <button onclick="openCurrentHabitModal()" class="flex items-center space-x-1 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 px-2.5 py-1 rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-            <span id="btnHabitModalLabel">内訳一覧</span>
+          <!-- 右上の内訳ボタン（シンプル表記＆落ち着いたダーク配色） -->
+          <button onclick="openCurrentHabitModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1 rounded-lg text-xs font-medium transition active:scale-95 flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            <span>内訳</span>
           </button>
         </div>
-        <div class="text-[10px] text-slate-400 mb-2">💡 グラフの各領域タップでも内訳小画面が開きます</div>
+        <div class="text-[10px] text-slate-500 mb-2">💡 グラフの各領域タップでも内訳小画面が開きます</div>
         <div class="h-52 relative">
           <canvas id="habitChart"></canvas>
         </div>
@@ -212,12 +212,8 @@
 
   <!-- 内訳詳細モーダル（小画面 / ボトムシート） -->
   <div id="habitModal" class="fixed inset-0 z-50 hidden">
-    <!-- 背景オーバーレイ -->
     <div onclick="closeHabitModal()" class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"></div>
-    
-    <!-- モーダル本体 -->
     <div class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900 border-t border-slate-700 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden transition-transform">
-      <!-- ヘッダー -->
       <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/90 sticky top-0 z-10">
         <div>
           <div class="flex items-center space-x-2">
@@ -231,10 +227,7 @@
         </button>
       </div>
 
-      <!-- 内訳フィルタータブ（他カテゴリへの切り替え用） -->
       <div id="modalFilterTabs" class="flex space-x-1.5 px-4 py-2 border-b border-slate-800/60 overflow-x-auto no-scrollbar bg-slate-950/40"></div>
-
-      <!-- 明細リストエリア -->
       <div id="modalItemList" class="p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50"></div>
     </div>
   </div>
@@ -261,7 +254,7 @@
     let excludeNoise = true;
     let charts = {};
     let currentShopSorted = [];
-    let currentActiveHabit = "居酒屋・バー"; // 内訳ボタンで初期表示するカテゴリ
+    let currentActiveHabit = "居酒屋・バー";
 
     const habitColorMap = {
       '居酒屋・バー': '#f43f5e',
@@ -413,7 +406,6 @@
       }
     }
 
-    // ドーナツグラフ（タップで直接モーダル呼び出し連動）
     function renderHabitChart(monthData) {
       const habitTotals = {};
       const habitKeys = ['居酒屋・バー', 'コンビニ', '外食', 'カフェ', '自販機・オフィス'];
@@ -427,11 +419,9 @@
         }
       });
 
-      // 最も金額が大きい習慣を初期選択に
       const sortedHabits = Object.entries(habitTotals).sort((a,b) => b[1] - a[1]);
       if (sortedHabits.length && sortedHabits[0][1] > 0) {
         currentActiveHabit = sortedHabits[0][0];
-        document.getElementById('btnHabitModalLabel').textContent = `${currentActiveHabit}の内訳`;
       }
 
       const ctx = document.getElementById('habitChart').getContext('2d');
@@ -455,8 +445,7 @@
           onClick: (evt, elements) => {
             if (elements && elements.length > 0) {
               const clickedIndex = elements[0].index;
-              const habitName = habitKeys[clickedIndex];
-              openHabitModal(habitName);
+              openHabitModal(habitKeys[clickedIndex]);
             }
           },
           plugins: {
@@ -477,8 +466,7 @@
                 }
               },
               onClick: (e, legendItem) => {
-                const habitName = habitKeys[legendItem.index];
-                openHabitModal(habitName);
+                openHabitModal(habitKeys[legendItem.index]);
               }
             }
           }
@@ -486,14 +474,12 @@
       });
     }
 
-    // --- 内訳モーダル（ボトムシート小画面）制御 ---
     function openCurrentHabitModal() {
       openHabitModal(currentActiveHabit);
     }
 
     function openHabitModal(habitName) {
       currentActiveHabit = habitName;
-      document.getElementById('btnHabitModalLabel').textContent = `${habitName}の内訳`;
 
       const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
       const monthData = filteredAll.filter(d => d.month === selectedMonth);
@@ -507,12 +493,10 @@
       const count = targetItems.length;
       const avg = count ? Math.round(total / count) : 0;
 
-      // ヘッダー情報更新
       document.getElementById('modalHabitTitle').textContent = `${habitName} の明細`;
       document.getElementById('modalHabitDot').style.backgroundColor = habitColorMap[habitName] || '#6366f1';
       document.getElementById('modalHabitSummary').textContent = `${selectedMonth} 合計: ¥${total.toLocaleString()} (${count}回 / 平均 ¥${avg.toLocaleString()})`;
 
-      // カテゴリ切り替えタブ生成
       const tabsContainer = document.getElementById('modalFilterTabs');
       tabsContainer.innerHTML = '';
       const habitKeys = ['居酒屋・バー', 'コンビニ', '外食', 'カフェ', '自販機・オフィス'];
@@ -527,7 +511,6 @@
         tabsContainer.appendChild(btn);
       });
 
-      // 明細リスト描画
       const listContainer = document.getElementById('modalItemList');
       if (targetItems.length === 0) {
         listContainer.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">${habitName} の支出データはありません</div>`;
