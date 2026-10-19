@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <!-- iPhone/Androidでホーム画面に追加した際にフルスクリーンアプリ化する設定 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0b0f19">
@@ -89,16 +88,26 @@
     <!-- タブ1: 分析ビュー -->
     <div id="viewAnalytics" class="space-y-5">
       
-      <!-- 1. 習慣別内訳グラフ -->
+      <!-- 1. 習慣別内訳グラフ（内訳ボタン付き） -->
       <div class="glass-card p-4 rounded-2xl">
-        <h2 class="text-sm font-bold text-white">食費・日常習慣のリアル内訳</h2>
-        <p class="text-[11px] text-slate-400 mb-3">「食費」に隠れた居酒屋・コンビニ・自販機を分離</p>
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <h2 class="text-sm font-bold text-white">食費・日常習慣のリアル内訳</h2>
+            <p class="text-[11px] text-slate-400">「食費」に隠れた居酒屋・コンビニ・自販機を分離</p>
+          </div>
+          <!-- 右上の内訳ボタン -->
+          <button onclick="openCurrentHabitModal()" class="flex items-center space-x-1 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 px-2.5 py-1 rounded-lg text-xs font-semibold transition active:scale-95 shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            <span id="btnHabitModalLabel">内訳一覧</span>
+          </button>
+        </div>
+        <div class="text-[10px] text-slate-400 mb-2">💡 グラフの各領域タップでも内訳小画面が開きます</div>
         <div class="h-52 relative">
           <canvas id="habitChart"></canvas>
         </div>
       </div>
 
-      <!-- 2. チリツモ店舗ランキング（タップでドリルダウン） -->
+      <!-- 2. チリツモ店舗ランキング -->
       <div class="glass-card p-4 rounded-2xl">
         <div class="flex justify-between items-center mb-3">
           <div>
@@ -201,6 +210,35 @@
 
   </main>
 
+  <!-- 内訳詳細モーダル（小画面 / ボトムシート） -->
+  <div id="habitModal" class="fixed inset-0 z-50 hidden">
+    <!-- 背景オーバーレイ -->
+    <div onclick="closeHabitModal()" class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"></div>
+    
+    <!-- モーダル本体 -->
+    <div class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900 border-t border-slate-700 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden transition-transform">
+      <!-- ヘッダー -->
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/90 sticky top-0 z-10">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span id="modalHabitDot" class="w-3 h-3 rounded-full"></span>
+            <h3 id="modalHabitTitle" class="text-base font-bold text-white">内訳詳細</h3>
+          </div>
+          <div id="modalHabitSummary" class="text-xs text-slate-400 mt-0.5"></div>
+        </div>
+        <button onclick="closeHabitModal()" class="p-2 text-slate-400 hover:text-white rounded-full bg-slate-800/80">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- 内訳フィルタータブ（他カテゴリへの切り替え用） -->
+      <div id="modalFilterTabs" class="flex space-x-1.5 px-4 py-2 border-b border-slate-800/60 overflow-x-auto no-scrollbar bg-slate-950/40"></div>
+
+      <!-- 明細リストエリア -->
+      <div id="modalItemList" class="p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50"></div>
+    </div>
+  </div>
+
   <!-- ボトムナビ -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 glass-card border-t border-slate-800 px-6 py-2">
     <div class="max-w-md mx-auto flex justify-around items-center">
@@ -216,7 +254,6 @@
   </nav>
 
   <script>
-    // あなたのGAS APIエンドポイント（組み込み済み）
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwzSy0yahWPZtqiJbwwCWXg2iPxefyAyYeUmzarxp15Y317pVRvCZPdTZDpQmGHyck/exec";
 
     let rawData = [];
@@ -224,6 +261,15 @@
     let excludeNoise = true;
     let charts = {};
     let currentShopSorted = [];
+    let currentActiveHabit = "居酒屋・バー"; // 内訳ボタンで初期表示するカテゴリ
+
+    const habitColorMap = {
+      '居酒屋・バー': '#f43f5e',
+      'コンビニ': '#f59e0b',
+      '外食': '#10b981',
+      'カフェ': '#8b5cf6',
+      '自販機・オフィス': '#0ea5e9'
+    };
 
     let userStats = {
       izakayaAvg: 3000,
@@ -234,7 +280,6 @@
     Chart.defaults.color = '#94a3b8';
     Chart.defaults.font.family = "'Inter', 'Noto Sans JP', sans-serif";
 
-    // GAS環境でも外部(GitHub等)環境でも自動で動くハイブリッド読み込み
     window.onload = async function() {
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run.withSuccessHandler(initApp).getExpenseData();
@@ -328,7 +373,6 @@
       `;
     }
 
-    // Gemini API呼び出し（GAS・外部ハイブリッド対応）
     async function triggerGeminiAnalysis() {
       const btn = document.getElementById('btnAiAnalyze');
       const box = document.getElementById('nudgeText');
@@ -369,9 +413,11 @@
       }
     }
 
+    // ドーナツグラフ（タップで直接モーダル呼び出し連動）
     function renderHabitChart(monthData) {
       const habitTotals = {};
-      ['居酒屋・バー', 'コンビニ', '外食', 'カフェ', '自販機・オフィス'].forEach(h => habitTotals[h] = 0);
+      const habitKeys = ['居酒屋・バー', 'コンビニ', '外食', 'カフェ', '自販機・オフィス'];
+      habitKeys.forEach(h => habitTotals[h] = 0);
 
       monthData.forEach(d => {
         if (habitTotals[d.habitType] !== undefined) {
@@ -381,28 +427,133 @@
         }
       });
 
+      // 最も金額が大きい習慣を初期選択に
+      const sortedHabits = Object.entries(habitTotals).sort((a,b) => b[1] - a[1]);
+      if (sortedHabits.length && sortedHabits[0][1] > 0) {
+        currentActiveHabit = sortedHabits[0][0];
+        document.getElementById('btnHabitModalLabel').textContent = `${currentActiveHabit}の内訳`;
+      }
+
       const ctx = document.getElementById('habitChart').getContext('2d');
       if (charts.habit) charts.habit.destroy();
 
       charts.habit = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: Object.keys(habitTotals),
+          labels: habitKeys,
           datasets: [{
-            data: Object.values(habitTotals),
-            backgroundColor: ['#f43f5e', '#f59e0b', '#10b981', '#8b5cf6', '#0ea5e9'],
-            borderWidth: 0
+            data: habitKeys.map(k => habitTotals[k]),
+            backgroundColor: habitKeys.map(k => habitColorMap[k]),
+            borderWidth: 0,
+            hoverOffset: 8
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           cutout: '68%',
+          onClick: (evt, elements) => {
+            if (elements && elements.length > 0) {
+              const clickedIndex = elements[0].index;
+              const habitName = habitKeys[clickedIndex];
+              openHabitModal(habitName);
+            }
+          },
           plugins: {
-            legend: { position: 'right', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } }
+            legend: {
+              position: 'right',
+              labels: {
+                boxWidth: 12,
+                padding: 10,
+                font: { size: 11 },
+                generateLabels: (chart) => {
+                  const data = chart.data;
+                  return data.labels.map((label, i) => ({
+                    text: label,
+                    fillStyle: data.datasets[0].backgroundColor[i],
+                    hidden: false,
+                    index: i
+                  }));
+                }
+              },
+              onClick: (e, legendItem) => {
+                const habitName = habitKeys[legendItem.index];
+                openHabitModal(habitName);
+              }
+            }
           }
         }
       });
+    }
+
+    // --- 内訳モーダル（ボトムシート小画面）制御 ---
+    function openCurrentHabitModal() {
+      openHabitModal(currentActiveHabit);
+    }
+
+    function openHabitModal(habitName) {
+      currentActiveHabit = habitName;
+      document.getElementById('btnHabitModalLabel').textContent = `${habitName}の内訳`;
+
+      const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
+      const monthData = filteredAll.filter(d => d.month === selectedMonth);
+      
+      const targetItems = monthData.filter(d => {
+        if (habitName === '外食') return d.habitType === '外食' || (d.category === '食費' && d.habitType === 'その他');
+        return d.habitType === habitName;
+      }).sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+
+      const total = targetItems.reduce((s, d) => s + d.amount, 0);
+      const count = targetItems.length;
+      const avg = count ? Math.round(total / count) : 0;
+
+      // ヘッダー情報更新
+      document.getElementById('modalHabitTitle').textContent = `${habitName} の明細`;
+      document.getElementById('modalHabitDot').style.backgroundColor = habitColorMap[habitName] || '#6366f1';
+      document.getElementById('modalHabitSummary').textContent = `${selectedMonth} 合計: ¥${total.toLocaleString()} (${count}回 / 平均 ¥${avg.toLocaleString()})`;
+
+      // カテゴリ切り替えタブ生成
+      const tabsContainer = document.getElementById('modalFilterTabs');
+      tabsContainer.innerHTML = '';
+      const habitKeys = ['居酒屋・バー', 'コンビニ', '外食', 'カフェ', '自販機・オフィス'];
+      habitKeys.forEach(k => {
+        const btn = document.createElement('button');
+        const isActive = k === habitName;
+        btn.className = `px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition ${
+          isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+        }`;
+        btn.textContent = k;
+        btn.onclick = () => openHabitModal(k);
+        tabsContainer.appendChild(btn);
+      });
+
+      // 明細リスト描画
+      const listContainer = document.getElementById('modalItemList');
+      if (targetItems.length === 0) {
+        listContainer.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">${habitName} の支出データはありません</div>`;
+      } else {
+        listContainer.innerHTML = targetItems.map(item => `
+          <div class="pt-2 pb-1 flex justify-between items-start">
+            <div class="pr-2">
+              <div class="flex items-center space-x-1.5">
+                <span class="text-xs font-bold text-white">${item.shop}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 font-mono mt-0.5">
+                ${item.date.slice(5)} (${item.dayOfWeek}) ${item.time} ・ ${item.service}
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-extrabold text-white">¥${item.amount.toLocaleString()}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('habitModal').classList.remove('hidden');
+    }
+
+    function closeHabitModal() {
+      document.getElementById('habitModal').classList.add('hidden');
     }
 
     function renderShopRanking(monthData) {
