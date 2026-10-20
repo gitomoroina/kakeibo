@@ -88,7 +88,7 @@ function openHabitModal(habitName) {
   const avg = count ? Math.round(total / count) : 0;
 
   const modalRoot = document.getElementById('habitModal');
-  modalRoot.className = "fixed inset-0 z-50 select-none"; // テキスト選択を完全防止
+  modalRoot.className = "fixed inset-0 z-50 select-none";
   modalRoot.style.webkitTouchCallout = "none";
 
   document.getElementById('modalHabitTitle').textContent = `${habitName} の明細`;
@@ -106,9 +106,10 @@ function openHabitModal(habitName) {
   });
 
   const listContainer = document.getElementById('modalItemList');
-  listContainer.className = "p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50 max-h-[260px] select-none";
+  // 高さを260pxに固定（件数が少なくても縮まない）
+  listContainer.className = "p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50 h-[260px] select-none";
 
-  listContainer.innerHTML = targetItems.length === 0 ? `<div class="text-center py-8 text-slate-500 text-xs">支出データはありません</div>` :
+  listContainer.innerHTML = targetItems.length === 0 ? `<div class="flex items-center justify-center h-full text-slate-500 text-xs">支出データはありません</div>` :
     targetItems.map(item => `
       <div class="pt-2 pb-1 flex justify-between items-start">
         <div class="pr-2">
