@@ -50,34 +50,51 @@ function renderHabitChart(monthData) {
     }
   });
 
-  // 長押し（約0.45秒）検知ロジック
+  // 長押し検知（長押し成功で振動 → 指を離した時にモーダル表示）
   let pressTimer = null;
+  let isLongPressTriggered = false;
+  let targetHabit = null;
   let startX = 0, startY = 0;
-  let lastEvent = null;
 
   const cancel = () => {
     if (pressTimer) {
       clearTimeout(pressTimer);
       pressTimer = null;
     }
+    isLongPressTriggered = false;
+    targetHabit = null;
   };
 
   canvas.onpointerdown = (e) => {
     startX = e.clientX;
     startY = e.clientY;
-    lastEvent = e;
+    isLongPressTriggered = false;
+    targetHabit = null;
+
     pressTimer = setTimeout(() => {
       if (!charts.habit) return;
-      const elements = charts.habit.getElementsAtEventForMode(lastEvent, 'nearest', { intersect: true }, false);
+      const elements = charts.habit.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
       if (elements && elements.length > 0) {
-        if (navigator.vibrate) navigator.vibrate(40);
-        openHabitModal(habitKeys[elements[0].index]);
+        isLongPressTriggered = true;
+        targetHabit = habitKeys[elements[0].index];
+        if (navigator.vibrate) navigator.vibrate(40); // 長押し検知の合図
       }
-      cancel();
-    }, 450);
+    }, 400);
   };
 
-  canvas.onpointerup = cancel;
+  canvas.onpointerup = (e) => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+    if (isLongPressTriggered && targetHabit) {
+      e.preventDefault();
+      openHabitModal(targetHabit);
+    }
+    isLongPressTriggered = false;
+    targetHabit = null;
+  };
+
   canvas.onpointercancel = cancel;
   canvas.onpointerleave = cancel;
   canvas.onpointermove = (e) => {
