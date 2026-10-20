@@ -106,8 +106,12 @@ function openHabitModal(habitName) {
   });
 
   const listContainer = document.getElementById('modalItemList');
-  // 高さを260pxに固定（件数が少なくても縮まない）
-  listContainer.className = "p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50 h-[260px] select-none";
+  listContainer.className = "p-4 space-y-2 divide-y divide-slate-800/50 select-none";
+  // 直接スタイルを強制指定（Tailwindのキャッシュ・解釈漏れを完全回避）
+  listContainer.style.height = "260px";
+  listContainer.style.minHeight = "260px";
+  listContainer.style.maxHeight = "260px";
+  listContainer.style.overflowY = "auto";
 
   listContainer.innerHTML = targetItems.length === 0 ? `<div class="flex items-center justify-center h-full text-slate-500 text-xs">支出データはありません</div>` :
     targetItems.map(item => `
