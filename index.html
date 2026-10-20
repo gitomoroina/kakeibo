@@ -11,26 +11,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', 'Noto Sans JP', sans-serif;
-      background-color: #0b0f19;
-      color: #f8fafc;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .glass-card {
-      background: rgba(30, 41, 59, 0.65);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
+    body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #0b0f19; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+    .glass-card { background: rgba(30, 41, 59, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
     input[type="range"] { accent-color: #6366f1; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="pb-24 antialiased selection:bg-indigo-500 selection:text-white">
-
-  <!-- トップヘッダー -->
+  <!-- ヘッダー -->
   <header class="sticky top-0 z-30 glass-card px-4 py-3 border-b border-slate-800">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
@@ -51,13 +40,10 @@
     <p id="loadingText" class="text-sm text-slate-400 font-medium">スプレッドシートから最新データを取得中...</p>
   </div>
 
-  <!-- メインコンテンツ -->
+  <!-- メイン画面 -->
   <main id="mainContent" class="hidden max-w-md mx-auto px-4 pt-4 space-y-5">
-
-    <!-- 月選択ピル -->
     <div id="monthTabs" class="flex space-x-2 overflow-x-auto no-scrollbar py-1"></div>
 
-    <!-- KPI サマリーカード -->
     <div class="grid grid-cols-2 gap-3">
       <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
         <div class="text-xs text-slate-400 font-medium mb-1">選択月の支出合計</div>
@@ -71,74 +57,53 @@
       </div>
     </div>
 
-    <!-- Gemini リアル行動パターン分析カード -->
+    <!-- Gemini 分析カード -->
     <div class="glass-card p-4 rounded-2xl border-l-4 border-l-indigo-500 bg-gradient-to-r from-indigo-950/50 to-slate-900/50">
       <div class="flex justify-between items-center mb-2">
         <div class="flex items-center space-x-1.5">
           <span class="text-base">✨</span>
           <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Gemini パーソナル行動分析</h3>
         </div>
-        <button id="btnAiAnalyze" onclick="triggerGeminiAnalysis()" class="text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1 rounded-full shadow transition">
-          AIで深掘り分析する
-        </button>
+        <button id="btnAiAnalyze" onclick="triggerGeminiAnalysis()" class="text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1 rounded-full shadow transition">AIで深掘り分析する</button>
       </div>
       <div id="nudgeText" class="text-xs text-slate-200 leading-relaxed space-y-1"></div>
     </div>
 
-    <!-- タブ1: 分析ビュー -->
+    <!-- タブ1: 分析 -->
     <div id="viewAnalytics" class="space-y-5">
-      
-      <!-- 1. 習慣別内訳グラフ -->
       <div class="glass-card p-4 rounded-2xl">
         <div class="mb-2">
           <h2 class="text-sm font-bold text-white">食費・日常習慣のリアル内訳</h2>
           <p class="text-[11px] text-slate-400">「食費」に隠れた居酒屋・コンビニ・自販機を分離</p>
         </div>
         <div class="text-[10px] text-slate-400 mb-2">👆 各領域や凡例をタップすると明細一覧が開きます</div>
-        <div class="h-52 relative">
-          <canvas id="habitChart"></canvas>
-        </div>
+        <div class="h-52 relative"><canvas id="habitChart"></canvas></div>
       </div>
-
-      <!-- 2. チリツモ店舗ランキング -->
       <div class="glass-card p-4 rounded-2xl">
-        <div class="flex justify-between items-center mb-3">
-          <div>
-            <h2 class="text-sm font-bold text-white">店舗別「チリツモ」ランキング</h2>
-            <p class="text-[11px] text-indigo-400 font-medium">👆 店舗をタップすると利用日時・明細が開きます</p>
-          </div>
+        <div class="mb-3">
+          <h2 class="text-sm font-bold text-white">店舗別「チリツモ」ランキング</h2>
+          <p class="text-[11px] text-indigo-400 font-medium">👆 店舗をタップすると利用日時・明細が開きます</p>
         </div>
         <div id="shopRanking" class="space-y-2.5"></div>
       </div>
-
-      <!-- 3. 時間帯別支出ヒートチャート -->
       <div class="glass-card p-4 rounded-2xl">
         <h2 class="text-sm font-bold text-white mb-1">時間帯別の決済リズム</h2>
         <p class="text-[11px] text-slate-400 mb-3">疲れが溜まる夜・深夜の「判断力低下」による出費を検知</p>
-        <div class="h-40 relative">
-          <canvas id="hourChart"></canvas>
-        </div>
+        <div class="h-40 relative"><canvas id="hourChart"></canvas></div>
       </div>
-
-      <!-- 4. 月次カテゴリ推移 -->
       <div class="glass-card p-4 rounded-2xl">
         <h2 class="text-sm font-bold text-white mb-1">月次カテゴリ比較</h2>
         <p class="text-[11px] text-slate-400 mb-3">全体のバランス推移</p>
-        <div class="h-56 relative">
-          <canvas id="categoryChart"></canvas>
-        </div>
+        <div class="h-56 relative"><canvas id="categoryChart"></canvas></div>
       </div>
-
     </div>
 
-    <!-- タブ2: 節約＆未来価値シミュレーター -->
+    <!-- タブ2: シミュレーター -->
     <div id="viewSimulator" class="hidden space-y-5">
       <div class="glass-card p-5 rounded-2xl">
-        <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Prospect Theory & Opportunity Cost</span>
-        <h2 class="text-base font-bold text-white mt-0.5 mb-1">節約インパクト＆未来価値シミュレーター</h2>
-        <p class="text-xs text-slate-400 mb-5">あなたの実データ（平均単価・回数）をベースに、少しの行動変容がもたらす「年間削減額」と「未来価値」を算出します。</p>
-
-        <div class="space-y-6">
+        <h2 class="text-base font-bold text-white mb-1">節約インパクト＆未来価値シミュレーター</h2>
+        <p class="text-xs text-slate-400 mb-5">実データ（平均単価・回数）をベースに削減額と未来価値を算出します。</p>
+        <div class="space-y-5">
           <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/50">
             <div class="flex justify-between items-center mb-1">
               <span class="text-xs font-bold text-rose-400">🍶 居酒屋・バーの回数を減らす</span>
@@ -151,7 +116,6 @@
             <input type="range" id="slideIzakaya" min="0" max="8" step="1" value="1" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
             <div class="text-[11px] text-slate-400 mt-1 text-right" id="unitIzakaya"></div>
           </div>
-
           <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/50">
             <div class="flex justify-between items-center mb-1">
               <span class="text-xs font-bold text-amber-400">🏪 コンビニ行く回数を減らす</span>
@@ -164,7 +128,6 @@
             <input type="range" id="slideConveni" min="0" max="7" step="1" value="2" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
             <div class="text-[11px] text-slate-400 mt-1 text-right" id="unitConveni"></div>
           </div>
-
           <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/50">
             <div class="flex justify-between items-center mb-1">
               <span class="text-xs font-bold text-sky-400">☕ 自販機・ネオス・カフェを削減</span>
@@ -177,36 +140,28 @@
             <input type="range" id="slideDrink" min="0" max="100" step="10" value="50" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
           </div>
         </div>
-
         <div class="mt-6 p-5 rounded-2xl bg-gradient-to-br from-indigo-600/30 via-slate-900 to-emerald-900/30 border border-indigo-500/30 text-center space-y-4">
           <div>
             <div class="text-xs text-slate-300 font-medium">生み出せる月間キャッシュフロー</div>
             <div class="text-3xl font-extrabold text-white mt-1">月 <span id="resMonthly" class="text-emerald-400">¥0</span></div>
           </div>
           <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-700/60">
-            <div>
-              <div class="text-[11px] text-slate-400">年間での節約効果</div>
-              <div class="text-base font-bold text-white mt-0.5" id="resYearly">¥0</div>
-            </div>
-            <div>
-              <div class="text-[11px] text-indigo-300">5年間 投資に回すと(年利5%)</div>
-              <div class="text-base font-extrabold text-indigo-400 mt-0.5" id="resInvest">¥0</div>
-            </div>
+            <div><div class="text-[11px] text-slate-400">年間節約額</div><div class="text-base font-bold text-white mt-0.5" id="resYearly">¥0</div></div>
+            <div><div class="text-[11px] text-indigo-300">5年運用(年利5%)</div><div class="text-base font-extrabold text-indigo-400 mt-0.5" id="resInvest">¥0</div></div>
           </div>
           <div class="bg-slate-900/80 p-3 rounded-xl text-left border border-slate-800">
-            <div class="text-[11px] font-bold text-amber-400 mb-1">🎁 浮いたお金で毎年できること（機会費用）</div>
+            <div class="text-[11px] font-bold text-amber-400 mb-1">🎁 浮いたお金で毎年できること</div>
             <p id="resReward" class="text-xs text-slate-200 leading-normal"></p>
           </div>
         </div>
       </div>
     </div>
-
   </main>
 
-  <!-- 内訳詳細モーダル（小画面 / ボトムシート） -->
+  <!-- 内訳モーダル -->
   <div id="habitModal" class="fixed inset-0 z-50 hidden">
     <div onclick="closeHabitModal()" class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"></div>
-    <div class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900 border-t border-slate-700 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden transition-transform">
+    <div class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900 border-t border-slate-700 rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
       <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/90 sticky top-0 z-10">
         <div>
           <div class="flex items-center space-x-2">
@@ -219,506 +174,28 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-
       <div id="modalFilterTabs" class="flex space-x-1.5 px-4 py-2 border-b border-slate-800/60 overflow-x-auto no-scrollbar bg-slate-950/40"></div>
       <div id="modalItemList" class="p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50"></div>
     </div>
   </div>
 
-  <!-- ボトムナビ -->
+  <!-- ナビゲーション -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 glass-card border-t border-slate-800 px-6 py-2">
     <div class="max-w-md mx-auto flex justify-around items-center">
       <button onclick="switchTab('analytics')" id="tabBtnAnalytics" class="flex flex-col items-center py-1 px-4 text-indigo-400 font-bold text-xs">
-        <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-        現状分析
+        <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>現状分析
       </button>
       <button onclick="switchTab('simulator')" id="tabBtnSimulator" class="flex flex-col items-center py-1 px-4 text-slate-400 font-medium text-xs">
-        <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-        節約シミュレーター
+        <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>節約シミュレーター
       </button>
     </div>
   </nav>
 
-  <script>
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwzSy0yahWPZtqiJbwwCWXg2iPxefyAyYeUmzarxp15Y317pVRvCZPdTZDpQmGHyck/exec";
-
-    let rawData = [];
-    let selectedMonth = "";
-    let excludeNoise = true;
-    let charts = {};
-    let currentShopSorted = [];
-
-    const habitColorMap = {
-      '居酒屋・バー': '#f43f5e',
-      'コンビニ': '#f59e0b',
-      '外食': '#10b981',
-      'カフェ': '#8b5cf6',
-      '自販機・オフィス': '#0ea5e9'
-    };
-
-    let userStats = {
-      izakayaAvg: 3000,
-      conveniAvg: 450,
-      drinkMonthlyTotal: 3000
-    };
-
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.font.family = "'Inter', 'Noto Sans JP', sans-serif";
-
-    window.onload = async function() {
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run.withSuccessHandler(initApp).getExpenseData();
-      } else {
-        try {
-          const res = await fetch(`${GAS_API_URL}?mode=api`);
-          const data = await res.json();
-          initApp(data);
-        } catch (err) {
-          document.getElementById('loadingText').innerHTML = `データの取得に失敗しました。<br><span class="text-xs text-rose-400">${err.message}</span>`;
-        }
-      }
-    };
-
-    function initApp(data) {
-      rawData = data.filter(d => !d.isCharge);
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('mainContent').classList.remove('hidden');
-
-      const months = [...new Set(rawData.map(d => d.month))].sort();
-      selectedMonth = months[months.length - 1] || "2026-10";
-
-      renderMonthTabs(months);
-      
-      document.getElementById('noiseToggle').addEventListener('change', (e) => {
-        excludeNoise = e.target.checked;
-        updateDashboard();
-      });
-
-      ['slideIzakaya', 'slideConveni', 'slideDrink'].forEach(id => {
-        document.getElementById(id).addEventListener('input', runSimulation);
-      });
-
-      updateDashboard();
-    }
-
-    function renderMonthTabs(months) {
-      const container = document.getElementById('monthTabs');
-      container.innerHTML = '';
-      months.forEach(m => {
-        const btn = document.createElement('button');
-        const active = m === selectedMonth;
-        btn.className = `px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
-          active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-        }`;
-        const [y, mm] = m.split('-');
-        btn.textContent = `${y}年${parseInt(mm)}月`;
-        btn.onclick = () => {
-          selectedMonth = m;
-          renderMonthTabs(months);
-          updateDashboard();
-        };
-        container.appendChild(btn);
-      });
-    }
-
-    function updateDashboard() {
-      const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
-      const monthData = filteredAll.filter(d => d.month === selectedMonth);
-
-      const total = monthData.reduce((s, d) => s + d.amount, 0);
-      document.getElementById('kpiTotal').textContent = `¥${total.toLocaleString()}`;
-
-      const months = [...new Set(filteredAll.map(d => d.month))].sort();
-      const idx = months.indexOf(selectedMonth);
-      if (idx > 0) {
-        const prevMonth = months[idx - 1];
-        const prevTotal = filteredAll.filter(d => d.month === prevMonth).reduce((s, d) => s + d.amount, 0);
-        const diff = total - prevTotal;
-        const sign = diff > 0 ? '+' : '';
-        document.getElementById('kpiMoM').innerHTML = `前月比 <span class="${diff > 0 ? 'text-rose-400' : 'text-emerald-400'}">${sign}¥${diff.toLocaleString()}</span>`;
-      } else {
-        document.getElementById('kpiMoM').textContent = '前月データなし';
-      }
-
-      const microItems = monthData.filter(d => d.habitType === 'コンビニ' || d.habitType === '自販機・オフィス');
-      const microTotal = microItems.reduce((s, d) => s + d.amount, 0);
-      document.getElementById('kpiMicro').textContent = `¥${microTotal.toLocaleString()}`;
-      document.getElementById('kpiMicroCount').textContent = `月間 ${microItems.length} 回の少額決済`;
-
-      renderHabitChart(monthData);
-      renderShopRanking(monthData);
-      renderHourChart(monthData);
-      renderCategoryChart(filteredAll);
-      prepareSimulatorStats(monthData);
-      runSimulation();
-
-      const topShop = currentShopSorted[0];
-      document.getElementById('nudgeText').innerHTML = `
-        <p class="text-slate-300">当月の最多出費先は <strong>${topShop ? topShop.name : '--'}（${topShop ? topShop.count : 0}回 / ¥${topShop ? topShop.amount.toLocaleString() : 0}）</strong> です。右上の「AIで深掘り分析する」を押すと、Geminiが今月の曜日・時間帯・店舗傾向から具体的な削減策を診断します。</p>
-      `;
-    }
-
-    async function triggerGeminiAnalysis() {
-      const btn = document.getElementById('btnAiAnalyze');
-      const box = document.getElementById('nudgeText');
-      btn.disabled = true;
-      btn.textContent = "分析中...";
-      box.innerHTML = `<div class="flex items-center space-x-2 text-indigo-300 py-2"><div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div><span>Geminiが${selectedMonth}の明細パターンを解析しています...</span></div>`;
-
-      const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
-      const monthData = filteredAll.filter(d => d.month === selectedMonth);
-      const total = monthData.reduce((s, d) => s + d.amount, 0);
-
-      const payload = {
-        total: total,
-        topShops: currentShopSorted.slice(0, 6).map(s => ({ name: s.name, count: s.count, amount: s.amount, type: s.type })),
-        recentItems: monthData.slice(-35).map(d => `${d.date}(${d.dayOfWeek}) ${d.time} ${d.shop} ¥${d.amount}`)
-      };
-
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(resHtml => {
-            box.innerHTML = resHtml;
-            btn.disabled = false;
-            btn.textContent = "再分析";
-          })
-          .analyzeWithGemini(selectedMonth, payload);
-      } else {
-        try {
-          const url = `${GAS_API_URL}?mode=ai&month=${encodeURIComponent(selectedMonth)}&payload=${encodeURIComponent(JSON.stringify(payload))}`;
-          const res = await fetch(url);
-          const json = await res.json();
-          box.innerHTML = json.html;
-        } catch (err) {
-          box.innerHTML = `<p class="text-rose-400">分析エラー: ${err.message}</p>`;
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "再分析";
-        }
-      }
-    }
-
-    function renderHabitChart(monthData) {
-      const habitTotals = {};
-      const habitKeys = ['居酒屋・バー', 'コンビニ', '外食', 'カフェ', '自販機・オフィス'];
-      habitKeys.forEach(h => habitTotals[h] = 0);
-
-      monthData.forEach(d => {
-        if (habitTotals[d.habitType] !== undefined) {
-          habitTotals[d.habitType] += d.amount;
-        } else if (d.category === '食費') {
-          habitTotals['外食'] += d.amount;
-        }
-      });
-
-      const ctx = document.getElementById('habitChart').getContext('2d');
-      if (charts.habit) charts.habit.destroy();
-
-      charts.habit = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: habitKeys,
-          datasets: [{
-            data: habitKeys.map(k => habitTotals[k]),
-            backgroundColor: habitKeys.map(k => habitColorMap[k]),
-            borderWidth: 0,
-            hoverOffset: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '68%',
-          onClick: (evt, elements) => {
-            if (elements && elements.length > 0) {
-              const clickedIndex = elements[0].index;
-              openHabitModal(habitKeys[clickedIndex]);
-            }
-          },
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                boxWidth: 12,
-                padding: 10,
-                font: { size: 11 },
-                color: '#e2e8f0' // 白系で見やすい文字色
-              },
-              onClick: (e, legendItem) => {
-                openHabitModal(habitKeys[legendItem.index]);
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function openHabitModal(habitName) {
-      const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
-      const monthData = filteredAll.filter(d => d.month === selectedMonth);
-      
-      const targetItems = monthData.filter(d => {
-        if (habitName === '外食') return d.habitType === '外食' || (d.category === '食費' && d.habitType === 'その他');
-        return d.habitType === habitName;
-      }).sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
-
-      const total = targetItems.reduce((s, d) => s + d.amount, 0);
-      const count = targetItems.length;
-      const avg = count ? Math.round(total / count) : 0;
-
-      document.getElementById('modalHabitTitle').textContent = `${habitName} の明細`;
-      document.getElementById('modalHabitDot').style.backgroundColor = habitColorMap[habitName] || '#6366f1';
-      document.getElementById('modalHabitSummary').textContent = `${selectedMonth} 合計: ¥${total.toLocaleString()} (${count}回 / 平均 ¥${avg.toLocaleString()})`;
-
-      const tabsContainer = document.getElementById('modalFilterTabs');
-      tabsContainer.innerHTML = '';
-      const habitKeys = ['居酒屋・バー', 'コンビニ', '外食', 'カフェ', '自販機・オフィス'];
-      habitKeys.forEach(k => {
-        const btn = document.createElement('button');
-        const isActive = k === habitName;
-        btn.className = `px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition ${
-          isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-        }`;
-        btn.textContent = k;
-        btn.onclick = () => openHabitModal(k);
-        tabsContainer.appendChild(btn);
-      });
-
-      const listContainer = document.getElementById('modalItemList');
-      if (targetItems.length === 0) {
-        listContainer.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">${habitName} の支出データはありません</div>`;
-      } else {
-        listContainer.innerHTML = targetItems.map(item => `
-          <div class="pt-2 pb-1 flex justify-between items-start">
-            <div class="pr-2">
-              <div class="flex items-center space-x-1.5">
-                <span class="text-xs font-bold text-white">${item.shop}</span>
-              </div>
-              <div class="text-[10px] text-slate-400 font-mono mt-0.5">
-                ${item.date.slice(5)} (${item.dayOfWeek}) ${item.time} ・ ${item.service}
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="text-xs font-extrabold text-white">¥${item.amount.toLocaleString()}</div>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      document.getElementById('habitModal').classList.remove('hidden');
-    }
-
-    function closeHabitModal() {
-      document.getElementById('habitModal').classList.add('hidden');
-    }
-
-    function renderShopRanking(monthData) {
-      const shopMap = {};
-      monthData.forEach(d => {
-        let name = d.shop.replace(/セブン－イレブン.*/, 'セブン-イレブン')
-                         .replace(/ファミリーマート.*/, 'ファミリーマート')
-                         .replace(/ローソン.*/, 'ローソン')
-                         .replace(/ＮｅｗＤａｙｓ.*/, 'NewDays')
-                         .replace(/ネオス.*/, 'ネオス SPASE (オフィス)');
-        if (!shopMap[name]) shopMap[name] = { amount: 0, count: 0, type: d.habitType, items: [] };
-        shopMap[name].amount += d.amount;
-        shopMap[name].count += 1;
-        shopMap[name].items.push(d);
-      });
-
-      currentShopSorted = Object.entries(shopMap)
-        .map(([name, val]) => ({ name, ...val }))
-        .sort((a, b) => b.amount - a.amount)
-        .slice(0, 10);
-
-      const container = document.getElementById('shopRanking');
-      container.innerHTML = '';
-      const maxAmount = currentShopSorted[0]?.amount || 1;
-
-      currentShopSorted.forEach((item, idx) => {
-        const pct = Math.round((item.amount / maxAmount) * 100);
-        const badgeColor = item.type === '居酒屋・バー' ? 'text-rose-400 bg-rose-500/10' :
-                           item.type === 'コンビニ' ? 'text-amber-400 bg-amber-500/10' : 'text-indigo-400 bg-indigo-500/10';
-        
-        const detailsHtml = item.items
-          .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))
-          .map(tx => `
-            <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40 last:border-0 text-[11px]">
-              <div class="text-slate-300">
-                <span class="font-mono text-slate-400">${tx.date.slice(5)}(${tx.dayOfWeek}) ${tx.time}</span>
-                <span class="ml-2 text-slate-400">${tx.shop}</span>
-              </div>
-              <div class="font-bold text-slate-200">¥${tx.amount.toLocaleString()}</div>
-            </div>
-          `).join('');
-
-        const div = document.createElement('div');
-        div.className = "bg-slate-800/40 rounded-xl border border-slate-700/40 overflow-hidden transition-all";
-        div.innerHTML = `
-          <div onclick="toggleDrilldown(${idx})" class="p-3 cursor-pointer hover:bg-slate-800/70 transition">
-            <div class="flex justify-between items-center mb-1.5">
-              <div class="flex items-center space-x-2 truncate pr-2">
-                <span class="text-xs font-extrabold text-slate-500 w-4">${idx + 1}</span>
-                <span class="text-xs font-bold text-white truncate">${item.name}</span>
-                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${badgeColor}">${item.count}回</span>
-              </div>
-              <div class="flex items-center space-x-1.5">
-                <span class="text-xs font-extrabold text-white">¥${item.amount.toLocaleString()}</span>
-                <svg id="arrow-${idx}" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-              </div>
-            </div>
-            <div class="w-full bg-slate-700/50 h-1.5 rounded-full overflow-hidden">
-              <div class="bg-indigo-500 h-full rounded-full" style="width: ${pct}%"></div>
-            </div>
-          </div>
-          <div id="drill-${idx}" class="hidden bg-slate-900/80 px-3.5 py-2 border-t border-slate-700/50 max-h-48 overflow-y-auto">
-            <div class="text-[10px] font-bold text-indigo-400 mb-1">利用履歴（平均 ¥${Math.round(item.amount / item.count).toLocaleString()} / 回）</div>
-            ${detailsHtml}
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function toggleDrilldown(idx) {
-      const el = document.getElementById(`drill-${idx}`);
-      const arrow = document.getElementById(`arrow-${idx}`);
-      const isHidden = el.classList.contains('hidden');
-      el.classList.toggle('hidden', !isHidden);
-      arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-    }
-
-    function renderHourChart(monthData) {
-      const hours = new Array(24).fill(0);
-      monthData.forEach(d => { hours[d.hour] += d.amount; });
-
-      const ctx = document.getElementById('hourChart').getContext('2d');
-      if (charts.hour) charts.hour.destroy();
-
-      charts.hour = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: hours.map((_, i) => `${i}時`),
-          datasets: [{
-            label: '支出額',
-            data: hours,
-            backgroundColor: hours.map((_, i) => (i >= 20 || i <= 2) ? '#f43f5e' : '#6366f1'),
-            borderRadius: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 } } },
-            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 10 } } }
-          }
-        }
-      });
-    }
-
-    function renderCategoryChart(filteredAll) {
-      const months = [...new Set(filteredAll.map(d => d.month))].sort().slice(-3);
-      const cats = [...new Set(filteredAll.map(d => d.category))];
-      const palette = {
-        '食費': '#10b981', 'エンタメ': '#8b5cf6', '日用品': '#0ea5e9', '交通費': '#f59e0b',
-        '通信費': '#64748b', '医療費': '#ec4899', '衣類': '#14b8a6', 'その他': '#475569',
-        '旅行': '#f97316', '特別費': '#ef4444', '立替金': '#a855f7', '立替精算': '#6366f1'
-      };
-
-      const datasets = cats.map(c => ({
-        label: c,
-        data: months.map(m => filteredAll.filter(d => d.month === m && d.category === c).reduce((s, d) => s + d.amount, 0)),
-        backgroundColor: palette[c] || '#64748b',
-        borderRadius: 4
-      }));
-
-      const ctx = document.getElementById('categoryChart').getContext('2d');
-      if (charts.cat) charts.cat.destroy();
-
-      charts.cat = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: months, datasets: datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
-          scales: {
-            x: { stacked: true, grid: { display: false } },
-            y: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' } }
-          }
-        }
-      });
-    }
-
-    function prepareSimulatorStats(monthData) {
-      const izakaya = monthData.filter(d => d.habitType === '居酒屋・バー');
-      const conveni = monthData.filter(d => d.habitType === 'コンビニ');
-      const drink = monthData.filter(d => d.habitType === '自販機・オフィス' || d.habitType === 'カフェ');
-
-      const izaSum = izakaya.reduce((s, d) => s + d.amount, 0);
-      const conSum = conveni.reduce((s, d) => s + d.amount, 0);
-      const drkSum = drink.reduce((s, d) => s + d.amount, 0);
-
-      userStats.izakayaAvg = izakaya.length ? Math.round(izaSum / izakaya.length) : 3000;
-      userStats.conveniAvg = conveni.length ? Math.round(conSum / conveni.length) : 450;
-      userStats.drinkMonthlyTotal = drkSum || 2500;
-
-      document.getElementById('simIzakayaStats').textContent = `当月: ${izakaya.length}回 (計¥${izaSum.toLocaleString()})`;
-      document.getElementById('unitIzakaya').textContent = `（あなたの平均単価: ¥${userStats.izakayaAvg.toLocaleString()}/回 で算出）`;
-
-      document.getElementById('simConveniStats').textContent = `当月: ${conveni.length}回 (計¥${conSum.toLocaleString()})`;
-      document.getElementById('unitConveni').textContent = `（あなたの平均単価: ¥${userStats.conveniAvg.toLocaleString()}/回 で算出）`;
-
-      document.getElementById('simDrinkStats').textContent = `当月: ${drink.length}回 (計¥${drkSum.toLocaleString()})`;
-    }
-
-    function runSimulation() {
-      const izaCut = parseInt(document.getElementById('slideIzakaya').value);
-      const conCutWeekly = parseInt(document.getElementById('slideConveni').value);
-      const drkCutPct = parseInt(document.getElementById('slideDrink').value);
-
-      document.getElementById('valIzakaya').textContent = izaCut;
-      document.getElementById('valConveni').textContent = conCutWeekly;
-      document.getElementById('valDrink').textContent = drkCutPct;
-
-      const monthlySave = (izaCut * userStats.izakayaAvg) +
-                          (conCutWeekly * 4.3 * userStats.conveniAvg) +
-                          (userStats.drinkMonthlyTotal * (drkCutPct / 100));
-
-      const mRound = Math.round(monthlySave);
-      const yRound = mRound * 12;
-
-      const r = 0.05 / 12;
-      const n = 60;
-      const futureValue = Math.round(mRound * ((Math.pow(1 + r, n) - 1) / r));
-
-      document.getElementById('resMonthly').textContent = `¥${mRound.toLocaleString()}`;
-      document.getElementById('resYearly').textContent = `¥${yRound.toLocaleString()}`;
-      document.getElementById('resInvest').textContent = `¥${futureValue.toLocaleString()}`;
-
-      let reward = "";
-      if (yRound >= 150000) {
-        reward = `年間 <strong>¥${yRound.toLocaleString()}</strong> あれば、毎年「2泊3日の地方温泉＆地酒巡り旅」に2〜3回行ってもお釣りが来ます。`;
-      } else if (yRound >= 70000) {
-        reward = `年間 <strong>¥${yRound.toLocaleString()}</strong> あれば、欲しかったハイエンドなガジェットやギアが毎年1つ実質タダで手に入ります。`;
-      } else if (yRound > 0) {
-        reward = `年間 <strong>¥${yRound.toLocaleString()}</strong> あれば、希少な銘柄の日本酒（四合瓶）を年間${Math.floor(yRound/3500)}本楽しめます。`;
-      } else {
-        reward = `スライダーを動かして、無理のない削減ラインを探ってみましょう。`;
-      }
-      document.getElementById('resReward').innerHTML = reward;
-    }
-
-    function switchTab(tab) {
-      const isAna = tab === 'analytics';
-      document.getElementById('viewAnalytics').classList.toggle('hidden', !isAna);
-      document.getElementById('viewSimulator').classList.toggle('hidden', isAna);
-      
-      document.getElementById('tabBtnAnalytics').className = `flex flex-col items-center py-1 px-4 text-xs ${isAna ? 'text-indigo-400 font-bold' : 'text-slate-400 font-medium'}`;
-      document.getElementById('tabBtnSimulator').className = `flex flex-col items-center py-1 px-4 text-xs ${!isAna ? 'text-indigo-400 font-bold' : 'text-slate-400 font-medium'}`;
-    }
-  </script>
+  <!-- 分割スクリプト読み込み -->
+  <script src="api.js"></script>
+  <script src="charts.js"></script>
+  <script src="ranking.js"></script>
+  <script src="simulator.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
