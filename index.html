@@ -88,20 +88,13 @@
     <!-- タブ1: 分析ビュー -->
     <div id="viewAnalytics" class="space-y-5">
       
-      <!-- 1. 習慣別内訳グラフ -->
+      <!-- 1. 習慣別内訳グラフ（ボタンを削除しヘッダーをシンプル化） -->
       <div class="glass-card p-4 rounded-2xl">
-        <div class="flex justify-between items-center mb-2">
-          <div>
-            <h2 class="text-sm font-bold text-white">食費・日常習慣のリアル内訳</h2>
-            <p class="text-[11px] text-slate-400">「食費」に隠れた居酒屋・コンビニ・自販機を分離</p>
-          </div>
-          <!-- 右上の内訳ボタン（シンプル表記＆落ち着いたダーク配色） -->
-          <button onclick="openCurrentHabitModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1 rounded-lg text-xs font-medium transition active:scale-95 flex items-center space-x-1">
-            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-            <span>内訳</span>
-          </button>
+        <div class="mb-2">
+          <h2 class="text-sm font-bold text-white">食費・日常習慣のリアル内訳</h2>
+          <p class="text-[11px] text-slate-400">「食費」に隠れた居酒屋・コンビニ・自販機を分離</p>
         </div>
-        <div class="text-[10px] text-slate-500 mb-2">💡 グラフの各領域タップでも内訳小画面が開きます</div>
+        <div class="text-[10px] text-slate-400 mb-2">👆 各領域や凡例をタップすると明細一覧が開きます</div>
         <div class="h-52 relative">
           <canvas id="habitChart"></canvas>
         </div>
@@ -254,7 +247,6 @@
     let excludeNoise = true;
     let charts = {};
     let currentShopSorted = [];
-    let currentActiveHabit = "居酒屋・バー";
 
     const habitColorMap = {
       '居酒屋・バー': '#f43f5e',
@@ -419,11 +411,6 @@
         }
       });
 
-      const sortedHabits = Object.entries(habitTotals).sort((a,b) => b[1] - a[1]);
-      if (sortedHabits.length && sortedHabits[0][1] > 0) {
-        currentActiveHabit = sortedHabits[0][0];
-      }
-
       const ctx = document.getElementById('habitChart').getContext('2d');
       if (charts.habit) charts.habit.destroy();
 
@@ -474,13 +461,7 @@
       });
     }
 
-    function openCurrentHabitModal() {
-      openHabitModal(currentActiveHabit);
-    }
-
     function openHabitModal(habitName) {
-      currentActiveHabit = habitName;
-
       const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
       const monthData = filteredAll.filter(d => d.month === selectedMonth);
       
