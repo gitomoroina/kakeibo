@@ -102,6 +102,9 @@ function openHabitModal(habitName) {
   });
 
   const listContainer = document.getElementById('modalItemList');
+  // 5件分が綺麗に見える高さに固定し縦スクロール
+  listContainer.className = "p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50 max-h-[260px]";
+
   listContainer.innerHTML = targetItems.length === 0 ? `<div class="text-center py-8 text-slate-500 text-xs">${habitName} の支出データはありません</div>` :
     targetItems.map(item => `
       <div class="pt-2 pb-1 flex justify-between items-start">
