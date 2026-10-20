@@ -88,7 +88,7 @@
     <!-- タブ1: 分析ビュー -->
     <div id="viewAnalytics" class="space-y-5">
       
-      <!-- 1. 習慣別内訳グラフ（ボタンを削除しヘッダーをシンプル化） -->
+      <!-- 1. 習慣別内訳グラフ -->
       <div class="glass-card p-4 rounded-2xl">
         <div class="mb-2">
           <h2 class="text-sm font-bold text-white">食費・日常習慣のリアル内訳</h2>
@@ -442,15 +442,7 @@
                 boxWidth: 12,
                 padding: 10,
                 font: { size: 11 },
-                generateLabels: (chart) => {
-                  const data = chart.data;
-                  return data.labels.map((label, i) => ({
-                    text: label,
-                    fillStyle: data.datasets[0].backgroundColor[i],
-                    hidden: false,
-                    index: i
-                  }));
-                }
+                color: '#e2e8f0' // 白系で見やすい文字色
               },
               onClick: (e, legendItem) => {
                 openHabitModal(habitKeys[legendItem.index]);
@@ -723,6 +715,7 @@
       const isAna = tab === 'analytics';
       document.getElementById('viewAnalytics').classList.toggle('hidden', !isAna);
       document.getElementById('viewSimulator').classList.toggle('hidden', isAna);
+      
       document.getElementById('tabBtnAnalytics').className = `flex flex-col items-center py-1 px-4 text-xs ${isAna ? 'text-indigo-400 font-bold' : 'text-slate-400 font-medium'}`;
       document.getElementById('tabBtnSimulator').className = `flex flex-col items-center py-1 px-4 text-xs ${!isAna ? 'text-indigo-400 font-bold' : 'text-slate-400 font-medium'}`;
     }
