@@ -21,7 +21,8 @@ function renderHabitChart(monthData) {
     else if (d.category === '食費') habitTotals['外食'] += d.amount;
   });
 
-  const ctx = document.getElementById('habitChart').getContext('2d');
+  const canvas = document.getElementById('habitChart');
+  const ctx = canvas.getContext('2d');
   if (charts.habit) charts.habit.destroy();
 
   charts.habit = new Chart(ctx, {
@@ -39,9 +40,6 @@ function renderHabitChart(monthData) {
       responsive: true,
       maintainAspectRatio: false,
       cutout: '68%',
-      onClick: (evt, elements) => {
-        if (elements && elements.length > 0) openHabitModal(habitKeys[elements[0].index]);
-      },
       plugins: {
         legend: {
           position: 'right',
@@ -51,6 +49,41 @@ function renderHabitChart(monthData) {
       }
     }
   });
+
+  // 長押し（約0.45秒）検知ロジック
+  let pressTimer = null;
+  let startX = 0, startY = 0;
+  let lastEvent = null;
+
+  const cancel = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+  };
+
+  canvas.onpointerdown = (e) => {
+    startX = e.clientX;
+    startY = e.clientY;
+    lastEvent = e;
+    pressTimer = setTimeout(() => {
+      if (!charts.habit) return;
+      const elements = charts.habit.getElementsAtEventForMode(lastEvent, 'nearest', { intersect: true }, false);
+      if (elements && elements.length > 0) {
+        if (navigator.vibrate) navigator.vibrate(40);
+        openHabitModal(habitKeys[elements[0].index]);
+      }
+      cancel();
+    }, 450);
+  };
+
+  canvas.onpointerup = cancel;
+  canvas.onpointercancel = cancel;
+  canvas.onpointerleave = cancel;
+  canvas.onpointermove = (e) => {
+    if (Math.hypot(e.clientX - startX, e.clientY - startY) > 10) cancel();
+  };
+  canvas.oncontextmenu = (e) => e.preventDefault();
 }
 
 function renderHourChart(monthData) {
