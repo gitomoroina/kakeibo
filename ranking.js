@@ -2,15 +2,20 @@
 let currentShopSorted = [];
 
 function renderShopRanking(monthData) {
+  const container = document.getElementById('shopRanking');
+  if (!container) return;
+  container.innerHTML = '';
+
   const shopMap = {};
   monthData.forEach(d => {
-    let name = d.shop.replace(/セブン－イレブン.*/, 'セブン-イレブン')
-                     .replace(/ファミリーマート.*/, 'ファミリーマート')
-                     .replace(/ローソン.*/, 'ローソン')
-                     .replace(/ＮｅｗＤａｙｓ.*/, 'NewDays')
-                     .replace(/ネオス.*/, 'ネオス SPASE (オフィス)');
-    if (!shopMap[name]) shopMap[name] = { amount: 0, count: 0, type: d.habitType, items: [] };
-    shopMap[name].amount += d.amount;
+    let rawShop = d.shop || '不明';
+    let name = rawShop.replace(/セブン－イレブン.*/, 'セブン-イレブン')
+                      .replace(/ファミリーマート.*/, 'ファミリーマート')
+                      .replace(/ローソン.*/, 'ローソン')
+                      .replace(/ＮｅｗＤａｙｓ.*/, 'NewDays')
+                      .replace(/ネオス.*/, 'ネオス SPASE (オフィス)');
+    if (!shopMap[name]) shopMap[name] = { amount: 0, count: 0, type: d.habitType || 'その他', items: [] };
+    shopMap[name].amount += (d.amount || 0);
     shopMap[name].count += 1;
     shopMap[name].items.push(d);
   });
@@ -20,9 +25,12 @@ function renderShopRanking(monthData) {
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 10);
 
-  const container = document.getElementById('shopRanking');
-  container.innerHTML = '';
-  const maxAmount = currentShopSorted[0]?.amount || 1;
+  if (currentShopSorted.length === 0) {
+    container.innerHTML = '<div class="text-xs text-slate-500 py-4 text-center">店舗データがありません</div>';
+    return;
+  }
+
+  const maxAmount = currentShopSorted[0].amount || 1;
 
   currentShopSorted.forEach((item, idx) => {
     const pct = Math.round((item.amount / maxAmount) * 100);
@@ -30,16 +38,21 @@ function renderShopRanking(monthData) {
                        item.type === 'コンビニ' ? 'text-amber-400 bg-amber-500/10' : 'text-indigo-400 bg-indigo-500/10';
     
     const detailsHtml = item.items
-      .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))
-      .map(tx => `
-        <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40 last:border-0 text-[11px]">
-          <div class="text-slate-300">
-            <span class="font-mono text-slate-400">${tx.date.slice(5)}(${tx.dayOfWeek}) ${tx.time}</span>
-            <span class="ml-2 text-slate-400">${tx.shop}</span>
+      .sort((a, b) => ((b.date || '') + (b.time || '')).localeCompare((a.date || '') + (a.time || '')))
+      .map(tx => {
+        const dStr = tx.date ? tx.date.slice(5) : '--';
+        const wStr = tx.dayOfWeek ? `(${tx.dayOfWeek})` : '';
+        const tStr = tx.time || '';
+        return `
+          <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40 last:border-0 text-[11px]">
+            <div class="text-slate-300">
+              <span class="font-mono text-slate-400">${dStr}${wStr} ${tStr}</span>
+              <span class="ml-2 text-slate-400">${tx.shop || ''}</span>
+            </div>
+            <div class="font-bold text-slate-200">¥${(tx.amount || 0).toLocaleString()}</div>
           </div>
-          <div class="font-bold text-slate-200">¥${tx.amount.toLocaleString()}</div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
     const div = document.createElement('div');
     div.className = "bg-slate-800/40 rounded-xl border border-slate-700/40 overflow-hidden select-none";
@@ -72,6 +85,7 @@ function renderShopRanking(monthData) {
 function toggleDrilldown(idx) {
   const el = document.getElementById(`drill-${idx}`);
   const arrow = document.getElementById(`arrow-${idx}`);
+  if (!el || !arrow) return;
   const isHidden = el.classList.contains('hidden');
   el.classList.toggle('hidden', !isHidden);
   arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -81,9 +95,9 @@ function openHabitModal(habitName) {
   const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
   const monthData = filteredAll.filter(d => d.month === selectedMonth);
   const targetItems = monthData.filter(d => habitName === '外食' ? (d.habitType === '外食' || (d.category === '食費' && d.habitType === 'その他')) : d.habitType === habitName)
-                               .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+                               .sort((a, b) => ((b.date || '') + (b.time || '')).localeCompare((a.date || '') + (a.time || '')));
 
-  const total = targetItems.reduce((s, d) => s + d.amount, 0);
+  const total = targetItems.reduce((s, d) => s + (d.amount || 0), 0);
   const count = targetItems.length;
   const avg = count ? Math.round(total / count) : 0;
 
@@ -107,22 +121,24 @@ function openHabitModal(habitName) {
 
   const listContainer = document.getElementById('modalItemList');
   listContainer.className = "p-4 space-y-2 divide-y divide-slate-800/50 select-none";
-  // 直接スタイルを強制指定（Tailwindのキャッシュ・解釈漏れを完全回避）
-  listContainer.style.height = "260px";
-  listContainer.style.minHeight = "260px";
-  listContainer.style.maxHeight = "260px";
-  listContainer.style.overflowY = "auto";
+  listContainer.style.cssText = "height: 260px !important; min-height: 260px !important; max-height: 260px !important; overflow-y: auto !important;";
 
   listContainer.innerHTML = targetItems.length === 0 ? `<div class="flex items-center justify-center h-full text-slate-500 text-xs">支出データはありません</div>` :
-    targetItems.map(item => `
-      <div class="pt-2 pb-1 flex justify-between items-start">
-        <div class="pr-2">
-          <div class="text-xs font-bold text-white">${item.shop}</div>
-          <div class="text-[10px] text-slate-400 font-mono mt-0.5">${item.date.slice(5)} (${item.dayOfWeek}) ${item.time} ・ ${item.service}</div>
+    targetItems.map(item => {
+      const dStr = item.date ? item.date.slice(5) : '--';
+      const wStr = item.dayOfWeek ? `(${item.dayOfWeek})` : '';
+      const tStr = item.time || '';
+      const sStr = item.service || '';
+      return `
+        <div class="pt-2 pb-1 flex justify-between items-start">
+          <div class="pr-2">
+            <div class="text-xs font-bold text-white">${item.shop || '不明'}</div>
+            <div class="text-[10px] text-slate-400 font-mono mt-0.5">${dStr} ${wStr} ${tStr} ・ ${sStr}</div>
+          </div>
+          <div class="text-xs font-extrabold text-white">¥${(item.amount || 0).toLocaleString()}</div>
         </div>
-        <div class="text-xs font-extrabold text-white">¥${item.amount.toLocaleString()}</div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
   modalRoot.classList.remove('hidden');
 }
