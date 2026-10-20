@@ -83,6 +83,7 @@ function updateDashboard() {
   `;
 }
 
+// URL上限（2KB）に収まるよう送信データを圧縮
 async function triggerGeminiAnalysis() {
   const btn = document.getElementById('btnAiAnalyze');
   const box = document.getElementById('nudgeText');
@@ -92,10 +93,17 @@ async function triggerGeminiAnalysis() {
 
   const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
   const monthData = filteredAll.filter(d => d.month === selectedMonth);
+  
+  // 上位5店舗 ＋ 直近の代表明細10件に凝縮（URL長を約1KBに抑制）
   const payload = {
     total: monthData.reduce((s, d) => s + d.amount, 0),
-    topShops: currentShopSorted.slice(0, 6).map(s => ({ name: s.name, count: s.count, amount: s.amount, type: s.type })),
-    recentItems: monthData.slice(-35).map(d => `${d.date}(${d.dayOfWeek}) ${d.time} ${d.shop} ¥${d.amount}`)
+    topShops: currentShopSorted.slice(0, 5).map(s => ({
+      name: s.name,
+      count: s.count,
+      amount: s.amount,
+      type: s.type
+    })),
+    recentItems: monthData.slice(-10).map(d => `${d.date.slice(5)}(${d.dayOfWeek}) ${d.time} ${d.shop} ¥${d.amount}`)
   };
 
   try {
