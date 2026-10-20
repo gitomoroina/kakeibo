@@ -1,119 +1,79 @@
 // --- main.js ---
-let rawData = [];
-let selectedMonth = "";
-let excludeNoise = true;
+let rawData = [], selectedMonth = "", excludeNoise = true;
 
 window.onload = async function() {
   try {
     const data = await fetchExpenseData();
-    initApp(data);
+    rawData = data.filter(d => !d.isCharge);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('mainContent').classList.remove('hidden');
+
+    const months = [...new Set(rawData.map(d => d.month))].sort();
+    selectedMonth = months[months.length - 1] || "2026-10";
+
+    renderMonthTabs(months);
+    document.getElementById('noiseToggle').addEventListener('change', (e) => {
+      excludeNoise = e.target.checked;
+      updateDashboard();
+    });
+    ['slideIzakaya', 'slideConveni', 'slideDrink'].forEach(id => {
+      document.getElementById(id).addEventListener('input', runSimulation);
+    });
+
+    updateDashboard();
   } catch (err) {
-    document.getElementById('loadingText').innerHTML = `データ取得失敗:<br><span class="text-xs text-rose-400">${err.message}</span>`;
+    document.getElementById('loadingText').innerHTML = `エラー: ${err.message}`;
   }
 };
 
-function initApp(data) {
-  rawData = data.filter(d => !d.isCharge);
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('mainContent').classList.remove('hidden');
-
-  const months = [...new Set(rawData.map(d => d.month))].sort();
-  selectedMonth = months[months.length - 1] || "2026-10";
-
-  renderMonthTabs(months);
-  document.getElementById('noiseToggle').addEventListener('change', (e) => {
-    excludeNoise = e.target.checked;
-    updateDashboard();
-  });
-
-  ['slideIzakaya', 'slideConveni', 'slideDrink'].forEach(id => {
-    document.getElementById(id).addEventListener('input', runSimulation);
-  });
-
-  updateDashboard();
-}
-
 function renderMonthTabs(months) {
   const container = document.getElementById('monthTabs');
-  container.innerHTML = '';
-  months.forEach(m => {
-    const btn = document.createElement('button');
-    const active = m === selectedMonth;
-    btn.className = `px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
-      active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-    }`;
-    const [y, mm] = m.split('-');
-    btn.textContent = `${y}年${parseInt(mm)}月`;
-    btn.onclick = () => { selectedMonth = m; renderMonthTabs(months); updateDashboard(); };
-    container.appendChild(btn);
-  });
+  container.innerHTML = months.map(m => `
+    <button onclick="selectedMonth='${m}';renderMonthTabs([${months.map(x=>`'${x}'`)}]);updateDashboard();" 
+      class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${m === selectedMonth ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}">
+      ${m.split('-')[0]}年${parseInt(m.split('-')[1])}月
+    </button>`).join('');
 }
 
 function updateDashboard() {
-  const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
-  const monthData = filteredAll.filter(d => d.month === selectedMonth);
-
-  const total = monthData.reduce((s, d) => s + d.amount, 0);
+  const filtered = rawData.filter(d => excludeNoise ? !d.isNoise : true);
+  const mData = filtered.filter(d => d.month === selectedMonth);
+  const total = mData.reduce((s, d) => s + (d.amount || 0), 0);
   document.getElementById('kpiTotal').textContent = `¥${total.toLocaleString()}`;
 
-  const months = [...new Set(filteredAll.map(d => d.month))].sort();
-  const idx = months.indexOf(selectedMonth);
-  if (idx > 0) {
-    const prevTotal = filteredAll.filter(d => d.month === months[idx - 1]).reduce((s, d) => s + d.amount, 0);
-    const diff = total - prevTotal;
-    document.getElementById('kpiMoM').innerHTML = `前月比 <span class="${diff > 0 ? 'text-rose-400' : 'text-emerald-400'}">${diff > 0 ? '+' : ''}¥${diff.toLocaleString()}</span>`;
-  } else {
-    document.getElementById('kpiMoM').textContent = '前月データなし';
-  }
+  const micro = mData.filter(d => d.habitType === 'コンビニ' || d.habitType === '自販機・オフィス');
+  document.getElementById('kpiMicro').textContent = `¥${micro.reduce((s, d) => s + (d.amount || 0), 0).toLocaleString()}`;
+  document.getElementById('kpiMicroCount').textContent = `月間 ${micro.length} 回の少額決済`;
 
-  const microItems = monthData.filter(d => d.habitType === 'コンビニ' || d.habitType === '自販機・オフィス');
-  document.getElementById('kpiMicro').textContent = `¥${microItems.reduce((s, d) => s + d.amount, 0).toLocaleString()}`;
-  document.getElementById('kpiMicroCount').textContent = `月間 ${microItems.length} 回の少額決済`;
-
-  renderHabitChart(monthData);
-  renderShopRanking(monthData);
-  renderHourChart(monthData);
-  renderCategoryChart(filteredAll);
-  prepareSimulatorStats(monthData);
+  renderHabitChart(mData);
+  renderShopRanking(mData);
+  renderHourChart(mData);
+  renderCategoryChart(filtered);
+  prepareSimulatorStats(mData);
   runSimulation();
 
-  const topShop = currentShopSorted[0];
-  document.getElementById('nudgeText').innerHTML = `
-    <p class="text-slate-300">当月の最多出費先は <strong>${topShop ? topShop.name : '--'}（${topShop ? topShop.count : 0}回 / ¥${topShop ? topShop.amount.toLocaleString() : 0}）</strong> です。右上の「AIで深掘り分析する」を押すと、Geminiが具体的な削減策を診断します。</p>
-  `;
+  const top = (currentShopSorted && currentShopSorted[0]) ? currentShopSorted[0] : null;
+  document.getElementById('nudgeText').innerHTML = `<p class="text-slate-300">当月最多: <strong>${top ? top.name : '--'} (${top ? top.count : 0}回/¥${top ? top.amount.toLocaleString() : 0})</strong></p>`;
 }
 
-// URL上限（2KB）に収まるよう送信データを圧縮
 async function triggerGeminiAnalysis() {
-  const btn = document.getElementById('btnAiAnalyze');
-  const box = document.getElementById('nudgeText');
-  btn.disabled = true;
-  btn.textContent = "分析中...";
-  box.innerHTML = `<div class="flex items-center space-x-2 text-indigo-300 py-2"><div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div><span>Geminiが解析中...</span></div>`;
+  const btn = document.getElementById('btnAiAnalyze'), box = document.getElementById('nudgeText');
+  btn.disabled = true; btn.textContent = "分析中...";
+  box.innerHTML = `<span class="text-indigo-300 text-xs">Geminiが解析中...</span>`;
 
-  const filteredAll = rawData.filter(d => excludeNoise ? !d.isNoise : true);
-  const monthData = filteredAll.filter(d => d.month === selectedMonth);
-  
-  // 上位5店舗 ＋ 直近の代表明細10件に凝縮（URL長を約1KBに抑制）
+  const mData = rawData.filter(d => excludeNoise ? !d.isNoise : true).filter(d => d.month === selectedMonth);
   const payload = {
-    total: monthData.reduce((s, d) => s + d.amount, 0),
-    topShops: currentShopSorted.slice(0, 5).map(s => ({
-      name: s.name,
-      count: s.count,
-      amount: s.amount,
-      type: s.type
-    })),
-    recentItems: monthData.slice(-10).map(d => `${d.date.slice(5)}(${d.dayOfWeek}) ${d.time} ${d.shop} ¥${d.amount}`)
+    total: mData.reduce((s, d) => s + (d.amount || 0), 0),
+    topShops: (currentShopSorted || []).slice(0, 5).map(s => ({ name: s.name, count: s.count, amount: s.amount, type: s.type })),
+    recentItems: mData.slice(-10).map(d => `${(d.date||'').slice(5)} ${d.time||''} ${d.shop||''} ¥${d.amount||0}`)
   };
 
   try {
-    const html = await fetchGeminiAnalysis(selectedMonth, payload);
-    box.innerHTML = html;
+    box.innerHTML = await fetchGeminiAnalysis(selectedMonth, payload);
   } catch (err) {
     box.innerHTML = `<p class="text-rose-400">分析エラー: ${err.message}</p>`;
   } finally {
-    btn.disabled = false;
-    btn.textContent = "再分析";
+    btn.disabled = false; btn.textContent = "再分析";
   }
 }
 
