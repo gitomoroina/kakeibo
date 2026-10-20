@@ -22,6 +22,7 @@ function renderHabitChart(monthData) {
   });
 
   const canvas = document.getElementById('habitChart');
+  canvas.style.touchAction = 'manipulation'; // ダブルタップ時の画面ズームを防止
   const ctx = canvas.getContext('2d');
   if (charts.habit) charts.habit.destroy();
 
@@ -50,57 +51,38 @@ function renderHabitChart(monthData) {
     }
   });
 
-  // 長押し検知（長押し成功で振動 → 指を離した時にモーダル表示）
-  let pressTimer = null;
-  let isLongPressTriggered = false;
-  let targetHabit = null;
-  let startX = 0, startY = 0;
+  // ダブルタップ判定（350ミリ秒以内に同じ領域を2回タップ）
+  let lastTapTime = 0;
+  let lastTapIndex = null;
 
-  const cancel = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      pressTimer = null;
+  canvas.onclick = (e) => {
+    if (!charts.habit) return;
+    const elements = charts.habit.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
+    if (!elements || elements.length === 0) return;
+
+    const clickedIndex = elements[0].index;
+    const currentTime = Date.now();
+    const tapInterval = currentTime - lastTapTime;
+
+    if (lastTapIndex === clickedIndex && tapInterval < 350 && tapInterval > 0) {
+      // ダブルタップ成立
+      if (navigator.vibrate) navigator.vibrate(30);
+      openHabitModal(habitKeys[clickedIndex]);
+      lastTapTime = 0;
+      lastTapIndex = null;
+    } else {
+      // 1回目のタップ
+      lastTapTime = currentTime;
+      lastTapIndex = clickedIndex;
     }
-    isLongPressTriggered = false;
-    targetHabit = null;
   };
 
-  canvas.onpointerdown = (e) => {
-    startX = e.clientX;
-    startY = e.clientY;
-    isLongPressTriggered = false;
-    targetHabit = null;
-
-    pressTimer = setTimeout(() => {
-      if (!charts.habit) return;
-      const elements = charts.habit.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
-      if (elements && elements.length > 0) {
-        isLongPressTriggered = true;
-        targetHabit = habitKeys[elements[0].index];
-        if (navigator.vibrate) navigator.vibrate(40); // 長押し検知の合図
-      }
-    }, 400);
-  };
-
-  canvas.onpointerup = (e) => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      pressTimer = null;
-    }
-    if (isLongPressTriggered && targetHabit) {
-      e.preventDefault();
-      openHabitModal(targetHabit);
-    }
-    isLongPressTriggered = false;
-    targetHabit = null;
-  };
-
-  canvas.onpointercancel = cancel;
-  canvas.onpointerleave = cancel;
-  canvas.onpointermove = (e) => {
-    if (Math.hypot(e.clientX - startX, e.clientY - startY) > 10) cancel();
-  };
-  canvas.oncontextmenu = (e) => e.preventDefault();
+  // 不要になった長押しイベントハンドラをクリア
+  canvas.onpointerdown = null;
+  canvas.onpointerup = null;
+  canvas.onpointercancel = null;
+  canvas.onpointerleave = null;
+  canvas.onpointermove = null;
 }
 
 function renderHourChart(monthData) {
