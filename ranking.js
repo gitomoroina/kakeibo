@@ -42,7 +42,7 @@ function renderShopRanking(monthData) {
       `).join('');
 
     const div = document.createElement('div');
-    div.className = "bg-slate-800/40 rounded-xl border border-slate-700/40 overflow-hidden";
+    div.className = "bg-slate-800/40 rounded-xl border border-slate-700/40 overflow-hidden select-none";
     div.innerHTML = `
       <div onclick="toggleDrilldown(${idx})" class="p-3 cursor-pointer hover:bg-slate-800/70 transition">
         <div class="flex justify-between items-center mb-1.5">
@@ -87,6 +87,10 @@ function openHabitModal(habitName) {
   const count = targetItems.length;
   const avg = count ? Math.round(total / count) : 0;
 
+  const modalRoot = document.getElementById('habitModal');
+  modalRoot.className = "fixed inset-0 z-50 select-none"; // テキスト選択を完全防止
+  modalRoot.style.webkitTouchCallout = "none";
+
   document.getElementById('modalHabitTitle').textContent = `${habitName} の明細`;
   document.getElementById('modalHabitDot').style.backgroundColor = habitColorMap[habitName] || '#6366f1';
   document.getElementById('modalHabitSummary').textContent = `${selectedMonth} 合計: ¥${total.toLocaleString()} (${count}回 / 平均 ¥${avg.toLocaleString()})`;
@@ -102,10 +106,9 @@ function openHabitModal(habitName) {
   });
 
   const listContainer = document.getElementById('modalItemList');
-  // 5件分が綺麗に見える高さに固定し縦スクロール
-  listContainer.className = "p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50 max-h-[260px]";
+  listContainer.className = "p-4 overflow-y-auto space-y-2 divide-y divide-slate-800/50 max-h-[260px] select-none";
 
-  listContainer.innerHTML = targetItems.length === 0 ? `<div class="text-center py-8 text-slate-500 text-xs">${habitName} の支出データはありません</div>` :
+  listContainer.innerHTML = targetItems.length === 0 ? `<div class="text-center py-8 text-slate-500 text-xs">支出データはありません</div>` :
     targetItems.map(item => `
       <div class="pt-2 pb-1 flex justify-between items-start">
         <div class="pr-2">
@@ -116,7 +119,7 @@ function openHabitModal(habitName) {
       </div>
     `).join('');
 
-  document.getElementById('habitModal').classList.remove('hidden');
+  modalRoot.classList.remove('hidden');
 }
 
 function closeHabitModal() {
